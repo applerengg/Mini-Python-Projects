@@ -1,0 +1,4 @@
+- if harf = "v1.00" or "v1.01":
+	kullanýlan harflere atadam ve moruk ekle
+
+- ipucu isteyince hangi ülkenin baþkenti olduðunu göster

@@ -1,0 +1,21 @@
+v1.0.1: - doðru harfler hakký azaltmayacak
+		- harf hakký = uzunluk//2+2
+	- bekleme süreleri kýsaltýldý
+	- Kurallar Eklendi
+
+v1.0.2: - otomatik kapanmayý engellemek için sona input eklendi
+	- ülke þehir havuzuna hýrvatistana kadar eklendi
+
+v1.1.1: - ülke þehir havuzu tamamlandý (116)
+
+v1.1.2: - ülke þehir havuzu için ipucu sistemi eklendi.
+	- * girerek kapatma eklendi
+
+v1.1.3: - Kategori seçenekleri eklendi.
+		- Kurallar güncellendi
+	- Harf hakký standart 8 yapýldý. Kalan harf hakkýna göre skor eklendi.
+		- Kurallar Güncellendi
+
+v
+
+  

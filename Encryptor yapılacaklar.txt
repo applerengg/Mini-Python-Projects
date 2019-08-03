@@ -1,0 +1,4 @@
+- shorten the key
+- Take care of turkish characters in All mode.
+- allinone option (key and the text are in the same string)
+- encrypt based on the key which user inputs

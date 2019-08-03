@@ -1,0 +1,2 @@
+- puanlama fonksiyonlarý yazýp tursonu fonksiyonu içinde çaðýr
+- moderni tamamla

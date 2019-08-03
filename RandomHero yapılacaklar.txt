@@ -1,0 +1,7 @@
+- random numbers pop up and player needs to press keys quickly
+- random level enemies to confront
+- 
+
+
+
+

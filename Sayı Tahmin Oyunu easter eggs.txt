@@ -1,0 +1,5 @@
+- baþla yerine start veya begin yazýnca ingilizce olmasý
+- * yerine çýk yazýnca baþarým
+- at veya atadam yazýnca baþarým
+- skor>=18 ise baþarým
+- tahmin çok büyükse baþarým
