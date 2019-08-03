@@ -113,14 +113,19 @@ class Weapon():
 ###
 ### Enemy Class
 ###
-# goblin, chimera, zombie, mummy, wyvern, minotaur, sphinx, kraken, skeleton, bandit
 class Enemy():
 	def __init__(self, level, behaviour=None, boss=None):
+		self.level = randint(level-1, level+1)
+
 		behaviours = ["offensive", "defensive", "balanced", None]
 		self.behaviour = behaviour if behaviour is not None else choice(behaviours)
 		
-		boss_options = ["boss"]*5 + ["miniboss"]*10 + [None]*85
-		self.is_boss = boss if boss is not None else choice(boss_options)
+		boss_options_hilvl = ["boss"]*5 + ["miniboss"]*10 + [None]*85
+		boss_options_lowlvl = ["miniboss"]*10 + [None]*90
+		if self.level > level:
+			self.is_boss = boss if boss is not None else choice(boss_options_hilvl)
+		elif self.level >= level:
+			self.is_boss = boss if boss is not None else choice(boss_options_lowlvl)
 
 		attr_points = 0
 		if level < 5:
@@ -129,9 +134,10 @@ class Enemy():
 			attr_points = cfg.ATTR_POINTS_INITIAL + 3*cfg.ATTR_POINTS_HILVL + (level-4)*cfg.ATTR_POINTS_HILVL	
 		if self.is_boss == "miniboss":
 			attr_points += cfg.ATTR_POINTS_LOWLVL
+			self.color = "cyan"
 		if self.is_boss == "boss":
 			attr_points += cfg.ATTR_POINTS_HILVL
-
+			self.color = "magenta"
 
 		if behaviour == "offensive":
 			self.dmg = randint(attr_points*3//8, attr_points*6//8)
