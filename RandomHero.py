@@ -6,6 +6,7 @@ import os
 from termcolor import cprint, colored
 # ex: cprint("alperen","magenta", attrs=["bold","underline"])
 
+from string import printable
 
 os.system("color")		# colored output can be used now
 
@@ -14,11 +15,13 @@ os.system("color")		# colored output can be used now
 ###
 class Config():
 	def __init__(self):
-		self.ATTR_POINTS_HILVL = 5		# attribute points gained at levelup after level 5
+		self.ATTR_POINTS_HILVL = 6		# attribute points gained at levelup after level 5
 		self.ATTR_POINTS_INITIAL = 8	# attribute points given in the beginning
 		self.ATTR_POINTS_LOWLVL = 3		# attribute points gained at levelup before level 5
 		self.DEFENSE_ABSORB = 7/8
 		self.DEFENSE_HP = 0.1
+		self.INCORRECT_STAT_ENTRY_HI = printable.translate({ord(i): None for i in "1234567"})
+		self.INCORRECT_STAT_ENTRY_LO = printable.translate({ord(i): None for i in "123"})
 		self.QUICK_TURN = 20
 		self.XP_TO_NEXTLEVEL = 100
 
@@ -97,6 +100,55 @@ class RandomHero():
 		self.mindmg += damage
 		self.maxdmg += damage
 		self.critmultiplier += damage/20
+
+	def levelUp(self):
+		new_attr_points = 0
+		level_earned = self.xp // cfg.XP_TO_NEXTLEVEL
+		self.xp -= cfg.XP_TO_NEXTLEVEL * level_earned
+		for i in range(1, level_earned+1):
+			if self.level + i >= 5:
+				new_attr_points += cfg.ATTR_POINTS_HILVL
+			else:
+				new_attr_points += cfg.ATTR_POINTS_LOWLVL
+			
+		self.level += level_earned
+
+		levelup_message = """
+(1) Damage
+(2) HP
+(3) Defense{}
+You have {} attribute points. Enter {} numbers:
+[Be careful! If more than {} numbers entered, the first {} will be applied.]
+??> """.format(
+		"" if self.level<5 else "\n(4) Speed\n(5) Bravery\n(6) Luck\n(7) Regeneration",
+		new_attr_points, new_attr_points, new_attr_points, new_attr_points
+	)
+	
+		new_stats = input(levelup_message)
+		new_stats = new_stats.replace(" ","").replace("\t","")[:10]
+
+		if self.level < 5:
+			while any(i in cfg.INCORRECT_STAT_ENTRY_LO for i in new_stats):
+				new_stats = input("??> ")
+		
+			dmg = new_stats.count("1")
+			hp = new_stats.count("2")
+			defns = new_stats.count("3")
+			self.updateAttrs(dmg, hp, defns)
+		else:
+			while any(i in cfg.INCORRECT_STAT_ENTRY_HI for i in new_stats):
+				new_stats = input("??> ")
+		
+			dmg = new_stats.count("1")
+			hp = new_stats.count("2")
+			defns = new_stats.count("3")
+			spd = new_stats.count("4")
+			brv = new_stats.count("5")
+			lck = new_stats.count("6")
+			rgn = new_stats.count("7")
+			self.updateAttrs(dmg,hp,defns,spd,brv,lck,rgn)
+
+
 
 class Weapon():
 	def __init__(self, name, mindmg, maxdmg, speed):
@@ -242,6 +294,8 @@ You have 10 attribute points. Enter 10 numbers:
 	player = RandomHero(playername, dmg,hp,defns)
 	return player
 
+
+
 def attack(protagonist, opponent):
 	# return None if fight is not over yet (neither player nor the enemy is defeated), else return the winner
 	protagonist.curr_hp += protagonist.regeneration
@@ -295,7 +349,7 @@ def fight(hero, enemy):
 	while True:
 		turn += 1
 		print("xx> Turn {}".format(turn))
-		time.sleep(0)
+		time.sleep(1)
 		hturn += hero.speed
 		eturn += enemy.speed
 		if hturn == cfg.QUICK_TURN:
@@ -318,7 +372,7 @@ def fight(hero, enemy):
 			if winner:
 				break
 		print("{:-<32}".format(""))
-		time.sleep(0)
+		time.sleep(1)
 
 	time.sleep(3)
 	# restore HPs
@@ -333,9 +387,8 @@ def fight(hero, enemy):
 		)
 		hero.xp += enemy.xp
 		if hero.xp >= cfg.XP_TO_NEXTLEVEL:
-			level_earned = hero.xp // cfg.XP_TO_NEXTLEVEL
-			hero.xp -= cfg.XP_TO_NEXTLEVEL * level_earned
-			hero.level += level_earned
+			hero.levelUp()
+			
 
 	elif winner == enemy:
 		cprint("==> {} has won!".format(
