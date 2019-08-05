@@ -1,6 +1,7 @@
 
 from random import choice, randint
 import time 
+from threading import Thread
 
 import os 
 from termcolor import cprint, colored
@@ -18,11 +19,14 @@ class Config():
 		self.ATTR_POINTS_HILVL = 6		# attribute points gained at levelup after level 5
 		self.ATTR_POINTS_INITIAL = 8	# attribute points given in the beginning
 		self.ATTR_POINTS_LOWLVL = 3		# attribute points gained at levelup before level 5
+		self.BRAVERY_CRITDMG = 0.1		# bravery increase rate of critmultiplier
 		self.DEFENSE_ABSORB = 7/8
 		self.DEFENSE_HP = 0.1
 		self.INCORRECT_STAT_ENTRY_HI = printable.translate({ord(i): None for i in "1234567"})
 		self.INCORRECT_STAT_ENTRY_LO = printable.translate({ord(i): None for i in "123"})
 		self.QUICK_TURN = 20
+		self.TURNLIMIT_XPHI = 6
+		self.TURNLIMIT_XPLOW = 3
 		self.XP_TO_NEXTLEVEL = 100
 
 cfg = Config()
@@ -36,7 +40,7 @@ cfg = Config()
 #	hp			-> maximum amount of damage player can withstand
 #	defense		-> decrase damage taken 
 #	speed		-> increase turn frequency and dodge rate
-#	bravery		-> (?) delay enemy flee
+#	bravery		-> (?) delay enemy flee and increase critmultiplier
 #	luck 		-> increase crit chance and enemy loot
 #	regeneration-> hp increase rate
 #	
@@ -129,7 +133,7 @@ You have {} attribute points. Enter {} numbers:
 
 		if self.level < 5:
 			while any(i in cfg.INCORRECT_STAT_ENTRY_LO for i in new_stats):
-				new_stats = input("??> ")
+				new_stats = input("Incorrect entry, try again\n??> ")
 		
 			dmg = new_stats.count("1")
 			hp = new_stats.count("2")
@@ -165,12 +169,27 @@ class Weapon():
 ###
 ### Enemy Class
 ###
+# monavar
 class Enemy():
-	def __init__(self, level, behaviour=None, boss=None):
-		self.level = randint(level-1, level+1)
+	def __init__(self, level, name=None, behaviour=None, boss=None):
+		self.level = level+1 if boss else randint(level-1, level+1)
+		self.color = "red"
+		
+		# xp will be increased if enemy is boss
+		self.xp = 1
+		if self.level > level:		# enemy is stronger
+			self.xp += cfg.XP_TO_NEXTLEVEL * 3 // 20
+		elif self.level < level:	# enemy is weaker
+			self.xp += cfg.XP_TO_NEXTLEVEL * 1 // 20
+		else:						# enemy is same level
+			self.xp += cfg.XP_TO_NEXTLEVEL * 2 // 20
+		self.xp += randint(-cfg.XP_TO_NEXTLEVEL//30, cfg.XP_TO_NEXTLEVEL//30)	
 
-		behaviours = ["offensive", "defensive", "balanced", None]
-		self.behaviour = behaviour if behaviour is not None else choice(behaviours)
+		names = ["Monavar"]	# add more
+		self.name = name if name else choice(names)
+
+		behaviours = ["offensive", "defensive", "balanced"]+[None]*3
+		self.behaviour=behaviour if behaviour else choice(behaviours)
 		
 		boss_options_hilvl = ["boss"]*5 + ["miniboss"]*10 + [None]*85
 		boss_options_lowlvl = ["miniboss"]*10 + [None]*90
@@ -178,6 +197,8 @@ class Enemy():
 			self.is_boss = boss if boss is not None else choice(boss_options_hilvl)
 		elif self.level >= level:
 			self.is_boss = boss if boss is not None else choice(boss_options_lowlvl)
+		else:
+			self.is_boss = boss	
 
 		attr_points = 0
 		if level < 5:
@@ -187,9 +208,11 @@ class Enemy():
 		if self.is_boss == "miniboss":
 			attr_points += cfg.ATTR_POINTS_LOWLVL
 			self.color = "cyan"
+			self.xp += cfg.XP_TO_NEXTLEVEL // 3
 		if self.is_boss == "boss":
 			attr_points += cfg.ATTR_POINTS_HILVL
 			self.color = "magenta"
+			self.xp += cfg.XP_TO_NEXTLEVEL // 5
 
 		if behaviour == "offensive":
 			self.dmg = randint(attr_points*3//8, attr_points*6//8)
@@ -251,8 +274,7 @@ class Enemy():
 			self.regeneration = randint(0, self.dmg)
 			attr_points -= self.regeneration
 			self.speed += attr_points	# spend last points
-		self.critmultiplier = randint(10,15)/10 + self.dmg/20
-		se
+		self.critmultiplier = randint(12,15)/10 + self.dmg/20 
 			
 
 	def __str__(self):
@@ -385,7 +407,13 @@ def fight(hero, enemy):
 			attrs=["bold"],
 			end="\n\n"
 		)
-		hero.xp += enemy.xp
+		if turn <= cfg.TURNLIMIT_XPLOW:
+			hero.xp += enemy.xp // 4
+		elif turn <= cfg.TURNLIMIT_XPHI:
+			hero.xp += enemy.xp // 2
+		else:
+			hero.xp += enemy.xp	
+			
 		if hero.xp >= cfg.XP_TO_NEXTLEVEL:
 			hero.levelUp()
 			
