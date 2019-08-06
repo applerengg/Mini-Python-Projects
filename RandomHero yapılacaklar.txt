@@ -1,18 +1,20 @@
 priority:
-- add enemy xp system
-	- fight length (# of turns) affects xp gained
-- add enemy loot & player money system
-- bravery will affect crit damage
-
++ add enemy xp system
+	+ fight length (# of turns) affects xp gained
++ add enemy loot & player money system
++ bravery will affect crit damage and enemy flee
++ random level enemies to confront
 
 other:
-- add time & day cycle (thread)
+- add clock & day cycle (thread)
 -
 
+change/fix:
++ defense will affect only curr_hp, not hp
+- 
 
 later:
 - random numbers pop up and player needs to press keys quickly
-- random level enemies to confront
 - 
 
 
