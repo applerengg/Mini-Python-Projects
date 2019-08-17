@@ -7,7 +7,8 @@ priority:
 
 other:
 - add clock & day cycle (thread)
--
+- bravery may affect flee cost (?)
+- 
 
 change/fix:
 + defense will affect only curr_hp, not hp

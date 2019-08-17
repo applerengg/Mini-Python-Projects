@@ -21,18 +21,21 @@ class Config():
 		self.ATTR_POINTS_LOWLVL = 3		# attribute points gained at levelup before level 5
 		self.BRAVERY_CRITDMG = 0.1		# bravery increase rate of critmultiplier
 		self.BRAVERY_FLEEDELAY = 3
+		self.DEBUGMDOE = False
 		self.DEFENSE_ABSORB = 7/8
-		self.DEFENSE_HP = 0.1
+		self.DEFENSE_CURRHP_INCREASE = 1
 		self.ENEMY_INITIAL_DMG = 3
 		self.ENEMY_INITIAL_HP = 1
 		self.ENEMY_INITIAL_DEF = 1
 		self.ENEMY_INITIAL_SPD = 1
 		self.ENEMY_INITIAL_LCK = 1
-		self.ENEMY_INITIAL_RGN = 1
+		self.ENEMY_INITIAL_RGN = 0
 		self.ENEMY_MAX_LEVEL = 2
+		self.HP_CURRHP_INCREASE = 10
 		self.INCORRECT_STAT_ENTRY_HI = printable.translate({ord(i): None for i in "1234567"})
 		self.INCORRECT_STAT_ENTRY_LO = printable.translate({ord(i): None for i in "123"})
 		self.QUICK_TURN = 20
+		self.REGEN_MULTIPLIER = 3/4
 		self.TURNLIMIT_MAX = 20
 		self.TURNLIMIT_XPHI = 6
 		self.TURNLIMIT_XPLOW = 3
@@ -69,13 +72,14 @@ class Clock():
 #	weapon 		-> affects min and max damage
 #
 class RandomHero():
-	def __init__(self, name, damage, hp, defense, speed=1, bravery=0, luck=5, regeneration=0, xp=0, level=1, weapon=None, critmultiplier=1.2, color="green", money=0):
+	def __init__(self, name, damage, hp, defense, speed=1, bravery=0, luck=5, regeneration=1, xp=0, level=1, weapon=None, critmultiplier=1.2, color="green", money=0):
 		self.all_attr = dict()
 		self.name = name
 		self.damage = damage
 		self.defense = defense
-		self.hp = hp 							 # this one is max hp
-		self.curr_hp = self.hp*10 + self.defense # this one will be used in fights
+		self.hp = hp 							 
+		self.max_hp = self.hp*10 + self.defense
+		self.curr_hp = self.max_hp 
 		self.bravery = bravery
 		self.luck = luck
 		self.regeneration = regeneration
@@ -109,6 +113,7 @@ class RandomHero():
 		self.all_attr["level"] = self.level
 		self.all_attr["weapon"] = str(self.weapon)
 		self.all_attr["critmultiplier"] = self.critmultiplier
+		self.all_attr["max hp"] = self.max_hp
 		return self.all_attr
 
 	def updateAttrs(self, damage=0, hp=0, defense=0, speed=0, bravery=0, luck=0, regeneration=0):
@@ -126,8 +131,10 @@ class RandomHero():
 		self.critmultiplier += (damage/20) + bravery*cfg.BRAVERY_CRITDMG
 
 	def checkStats(self):
+		print("\n{} Stats:".format(colored(self.name, self.color)))
 		for k, v in sorted(self.updateAttrdict().items()):
-			print("{: <16}: {}".format(k,v))	
+			print("{: <16}: {}".format(k,v))
+		print()	# print newline
 
 	def levelUp(self):
 		new_attr_points = 0
@@ -192,7 +199,7 @@ class Weapon():
 	def changeName(self, newname):
 		self.name = newname + "({})".format(self.type)	
 	def __str__(self):
-		return "{}: {} - {} damage, {} speed".format(self.name, self.mindmg, self.maxdmg, self.speed)
+		return "{}: {} ~ {} damage, {} speed".format(self.name, self.mindmg, self.maxdmg, self.speed)
 
 ###
 ### Enemy Class
@@ -201,6 +208,8 @@ class Weapon():
 class Enemy():
 	def __init__(self, level, name=None, behaviour=None, boss=None):
 		self.level = level+cfg.ENEMY_MAX_LEVEL if boss else randint(level-2, level+cfg.ENEMY_MAX_LEVEL)
+		if self.level < 0:
+			self.level = 0
 		self.color = "red"
 		
 		# xp will be increased if enemy is boss
@@ -213,7 +222,7 @@ class Enemy():
 			self.xp += cfg.XP_TO_NEXTLEVEL * 2 // 20
 		self.xp += randint(-cfg.XP_TO_NEXTLEVEL//30, cfg.XP_TO_NEXTLEVEL//30)	
 
-		names = ["Monavar"]	# add more
+		names = ["Bandit","Monavar","Mummy","Spicek","Tepelops"]	# add more
 		self.name = name if name else choice(names)
 
 		behaviours = ["offensive", "defensive", "balanced"]+[None]*3
@@ -230,9 +239,11 @@ class Enemy():
 
 		attr_points = 0
 		if self.level < 5:
-			attr_points = cfg.ATTR_POINTS_INITIAL + (self.level-1) * cfg.ATTR_POINTS_LOWLVL
+			attr_points = cfg.ATTR_POINTS_INITIAL//2 + (
+				(self.level-1) * cfg.ATTR_POINTS_LOWLVL if self.level>1 else 0
+				)
 		else:
-			attr_points = cfg.ATTR_POINTS_INITIAL + 3*cfg.ATTR_POINTS_LOWLVL + (self.level-4)*cfg.ATTR_POINTS_HILVL	
+			attr_points = cfg.ATTR_POINTS_INITIAL//2 + 3*cfg.ATTR_POINTS_LOWLVL + (self.level-4)*cfg.ATTR_POINTS_HILVL	
 		if self.is_boss == "miniboss":
 			attr_points += cfg.ATTR_POINTS_LOWLVL * 2 
 			self.color = "cyan"
@@ -241,7 +252,8 @@ class Enemy():
 			attr_points += cfg.ATTR_POINTS_HILVL * 2
 			self.color = "magenta"
 			self.xp += cfg.XP_TO_NEXTLEVEL // 5
-		print("ATTRPOINTS",attr_points)
+		if cfg.DEBUGMDOE == True:	
+			print("ATTRPOINTS",attr_points)
 
 		self.loot = 1
 		self.loot += randint(self.xp//4, self.xp*2)
@@ -310,17 +322,19 @@ class Enemy():
 
 		self.mindmg = randint(0, self.dmg)
 		self.maxdmg = 2*self.dmg - self.mindmg
-		self.curr_hp = self.hp*10 + self.defense	
+		self.max_hp = self.hp*10 + self.defense
+		self.curr_hp = self.max_hp	
 		self.critmultiplier = randint(12,15)/10 + self.dmg/20 
 		self.all_attr = dict()
-		print("behaviour:",self.behaviour,"dmg:",self.dmg,"hp:",self.hp,"def:",self.defense)
+		if cfg.DEBUGMDOE == True:
+			print("behaviour:",self.behaviour,"dmg:",self.dmg,"hp:",self.hp,"def:",self.defense)
 	
 	def __str__(self):
 		return str(sorted(self.updateAttrdict().items()))
 
 	def updateAttrdict(self):
 		self.all_attr["name"] = self.name
-		self.all_attr["behaviour"] = self.behaviour
+		self.all_attr["behaviour"] = self.behaviour if self.behaviour is not None else "Random"
 		self.all_attr["mindmg"] = self.mindmg
 		self.all_attr["maxdmg"] = self.maxdmg
 		self.all_attr["hp"] = self.hp
@@ -330,12 +344,14 @@ class Enemy():
 		self.all_attr["regeneration"] = self.regeneration
 		self.all_attr["level"] = self.level
 		self.all_attr["critmultiplier"] = self.critmultiplier
+		self.all_attr["max hp"] = self.max_hp
 		return self.all_attr
 
 	def checkStats(self):
+		print("\n{} Stats:".format(colored(self.name, self.color)))
 		for k, v in sorted(self.updateAttrdict().items()):
 			print("{: <16}: {}".format(k,v))
-
+		print()	# print newline
 
 ###
 ### Gameplay functions
@@ -352,7 +368,7 @@ You have 10 attribute points. Enter 10 numbers:
 	initial_stats = initial_stats.replace(" ","").replace("\t","")[:10]
 	
 	dmg = initial_stats.count("1")
-	hp = initial_stats.count("2")
+	hp = initial_stats.count("2") + 1
 	defns = initial_stats.count("3")
 
 	player = RandomHero(playername, dmg,hp,defns)
@@ -362,9 +378,9 @@ You have 10 attribute points. Enter 10 numbers:
 
 def attack(protagonist, opponent):
 	# return None if fight is not over yet (neither player nor the enemy is defeated), else return the winner
-	protagonist.curr_hp += protagonist.regeneration
-	if protagonist.curr_hp > protagonist.hp*10:
-		protagonist.curr_hp = protagonist.hp*10
+	protagonist.curr_hp += protagonist.regeneration * cfg.REGEN_MULTIPLIER
+	if protagonist.curr_hp > protagonist.max_hp:
+		protagonist.curr_hp = protagonist.max_hp
 
 	dodge_rate = opponent.speed - protagonist.speed//2
 	dodge_rate = 1 if dodge_rate<1 else dodge_rate
@@ -422,6 +438,7 @@ def fight(hero, enemy):
 			if winner:
 				break
 			hturn -= cfg.QUICK_TURN
+			turn -= 1
 		if eturn == cfg.QUICK_TURN and not hturn == cfg.QUICK_TURN:
 			print("::> Quick Turn for {}!".format(enemy.name))
 			winner = attack(enemy, hero)
@@ -448,22 +465,34 @@ def fight(hero, enemy):
 	hero.curr_hp = hero.hp*10
 	enemy.curr_hp = enemy.hp*10
 
+	print()	# print newline
 	if winner == hero:
-		cprint("==> {} has won!".format(
-			colored(hero.name, hero.color) ),
-			attrs=["bold"],
-			end="\n\n"
-		)
+		"""
 		if turn <= cfg.TURNLIMIT_XPLOW:
-			hero.xp += enemy.xp // 4
+			xp_earned = enemy.xp // 4
 		elif turn <= cfg.TURNLIMIT_XPHI:
-			hero.xp += enemy.xp // 2
+			xp_earned = enemy.xp // 2
 		else:
-			hero.xp += enemy.xp	
+			xp_earned = enemy.xp
+		"""
+		xp_earned = enemy.xp
 
 		loot_multiplier = [2]*(hero.luck//2) + [1.5]*(hero.luck//2) + [1.25]*hero.luck + [1]*(100-(2*(hero.luck//2)+hero.luck))
-		hero.money += enemy.loot * choice(loot_multiplier)
+		money_earned = enemy.loot * choice(loot_multiplier)
+
+		hero.xp += xp_earned
+		hero.money += money_earned
 		
+		cprint("==> {} has won!".format(
+			colored(hero.name, hero.color) ),
+			attrs=["bold"]
+		)
+		cprint("==> Earned {} cora and {} xp.".format(
+			colored(money_earned, attrs=["bold"]),
+			colored(xp_earned, attrs=["bold"])	),
+			end="\n\n"
+		)
+
 		if hero.xp >= cfg.XP_TO_NEXTLEVEL:
 			hero.levelUp()
 			
@@ -480,6 +509,7 @@ def fight(hero, enemy):
 			attrs=["bold"],
 			end="\n\n"
 		)
+	time.sleep(1)	
 
 
 def pprint(entity):
@@ -490,6 +520,7 @@ def pprint(entity):
 if __name__ == '__main__':
 	#player = createNewHero()
 	#print(player)
+	"""
 	p1 = RandomHero("Ofansif", 15,8,3, color="red")
 	p2 = RandomHero("Dengeli", 9,9,8, color="yellow")
 	p3 = RandomHero("Defansif", 4,7,15, color="green")
@@ -501,3 +532,37 @@ if __name__ == '__main__':
 	e7 = Enemy(7,behaviour="balanced")
 	e8 = Enemy(8)
 	e9 = Enemy(9)
+	"""
+
+	playerhero = createNewHero()
+	while 1:
+		print("...")
+		time.sleep(randint(10,30)/10)
+
+		e = Enemy(playerhero.level)
+		print("Enemy encounter!\nA {} level {}!".format(
+				colored(e.level, attrs=["bold"]),
+				colored(e.name, e.color)
+			)
+		)
+
+		flag_act = True
+		while flag_act:
+			act = input("""
+(1) Fight
+(2) Check Enemy Stats
+(3) Check Your Stats
+(4) Runaway
+??> """)
+			if act == "" or act == "1":
+				fight(playerhero, e)
+				flag_act = False
+			elif act == "2":
+				e.checkStats()
+			elif act == "3":
+				playerhero.checkStats()
+			elif act == "4":
+				break
+			else:
+				continue
+
