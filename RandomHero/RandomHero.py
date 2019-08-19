@@ -1,15 +1,18 @@
 
 from random import choice, randint
 import time 
-from threading import Thread
+from threading import Thread 	# for ingame day cycle.
 
 import os 
 from termcolor import cprint, colored
 # ex: cprint("alperen","magenta", attrs=["bold","underline"])
 
-from string import printable
+from string import printable	# for attribute point spend checking.
+
+import pickle 	# for saving and loading profiles.
 
 os.system("color")		# colored output can be used now
+
 
 ###
 ### Configuration
@@ -17,7 +20,7 @@ os.system("color")		# colored output can be used now
 class Config():
 	def __init__(self):
 		self.ATTR_POINTS_HILVL = 6		# attribute points gained at levelup after level 5
-		self.ATTR_POINTS_INITIAL = 8	# attribute points given in the beginning
+		self.ATTR_POINTS_INITIAL = 10	# attribute points given in the beginning
 		self.ATTR_POINTS_LOWLVL = 3		# attribute points gained at levelup before level 5
 		self.BRAVERY_CRITDMG = 0.1		# bravery increase rate of critmultiplier
 		self.BRAVERY_FLEEDELAY = 3
@@ -35,11 +38,11 @@ class Config():
 		self.INCORRECT_STAT_ENTRY_HI = printable.translate({ord(i): None for i in "1234567"})
 		self.INCORRECT_STAT_ENTRY_LO = printable.translate({ord(i): None for i in "123"})
 		self.QUICK_TURN = 20
-		self.REGEN_MULTIPLIER = 3/4
+		self.REGEN_MULTIPLIER = 2/4
 		self.TURNLIMIT_MAX = 20
 		self.TURNLIMIT_XPHI = 6
 		self.TURNLIMIT_XPLOW = 3
-		self.XP_TO_NEXTLEVEL = 100
+		self.XP_TO_NEXTLEVEL = 1
 
 cfg = Config()
 
@@ -49,7 +52,8 @@ class Clock():
 		self.clock_thread.daemon = True
 	def start(self):
 		self.clock_thread.start()
-
+	def stop(self):
+		pass
 
 
 
@@ -62,14 +66,14 @@ class Clock():
 #	hp			-> maximum amount of damage player can withstand
 #	defense		-> decrase damage taken 
 #	speed		-> increase turn frequency and dodge rate
-#	bravery		-> (?) delay enemy flee and increase critmultiplier
+#	bravery		-> delay enemy flee and increase critmultiplier
 #	luck 		-> increase crit chance and enemy loot
 #	regeneration-> hp increase rate
 #	
 #	xp			-> required to level up
 #	level 		-> player level
 #
-#	weapon 		-> affects min and max damage
+#	weapon 		-> affects min-max damage and speed
 #
 class RandomHero():
 	def __init__(self, name, damage, hp, defense, speed=1, bravery=0, luck=5, regeneration=1, xp=0, level=1, weapon=None, critmultiplier=1.2, color="green", money=0):
@@ -109,10 +113,10 @@ class RandomHero():
 		self.all_attr["bravery"] = self.bravery
 		self.all_attr["luck"] = self.luck
 		self.all_attr["regeneration"] = self.regeneration
-		self.all_attr["xp"] = self.xp
+		self.all_attr["xp"] = round(self.xp, 2)
 		self.all_attr["level"] = self.level
 		self.all_attr["weapon"] = str(self.weapon)
-		self.all_attr["critmultiplier"] = self.critmultiplier
+		self.all_attr["critmultiplier"] = round(self.critmultiplier,2)
 		self.all_attr["max hp"] = self.max_hp
 		return self.all_attr
 
@@ -138,7 +142,7 @@ class RandomHero():
 
 	def levelUp(self):
 		new_attr_points = 0
-		level_earned = self.xp // cfg.XP_TO_NEXTLEVEL
+		level_earned = int(self.xp // cfg.XP_TO_NEXTLEVEL)
 		self.xp -= cfg.XP_TO_NEXTLEVEL * level_earned
 		for i in range(1, level_earned+1):
 			if self.level + i >= 5:
@@ -149,23 +153,30 @@ class RandomHero():
 		self.level += level_earned
 
 		levelup_message = """
+{0} You are now level {3}
 (1) Damage
 (2) HP
-(3) Defense{}
-You have {} attribute points. Enter {} numbers:
-[Be careful! If more than {} numbers entered, the first {} will be applied.]
+(3) Defense{1}
+You have {2} attribute points. Enter {2} numbers:
+[Be careful! If more than {2} numbers entered, the first {2} will be applied.]
 ??> """.format(
+		colored("==> LEVEL UP!","blue",attrs=["bold"]),
 		"" if self.level<5 else "\n(4) Speed\n(5) Bravery\n(6) Luck\n(7) Regeneration",
-		new_attr_points, new_attr_points, new_attr_points, new_attr_points
+		new_attr_points,
+		self.level
 	)
 	
 		new_stats = input(levelup_message)
 
-		if self.level < 5:
-			while any(i in cfg.INCORRECT_STAT_ENTRY_LO for i in new_stats):
-				new_stats = input("Incorrect entry, try again\n??> ")
+		new_stats = new_stats.replace(" ","").replace("\t","")[:new_attr_points]
+		tooshort = True if len(new_stats) < new_attr_points else False
 		
-			new_stats = new_stats.replace(" ","").replace("\t","")[:new_attr_points]
+		if self.level < 5:
+			while any(i in cfg.INCORRECT_STAT_ENTRY_LO for i in new_stats) or tooshort:
+				new_stats = input("Either too short or incorrect entry, try again\n??> ")		
+				new_stats = new_stats.replace(" ","").replace("\t","")[:new_attr_points]
+				if len(new_stats) < new_attr_points:
+					tooshort = True
 			
 			dmg = new_stats.count("1")
 			hp = new_stats.count("2")
@@ -173,10 +184,11 @@ You have {} attribute points. Enter {} numbers:
 			self.updateAttrs(dmg, hp, defns)
 		
 		else:
-			while any(i in cfg.INCORRECT_STAT_ENTRY_HI for i in new_stats):
-				new_stats = input("Incorrect entry, try again\n??> ")
-			
-			new_stats = new_stats.replace(" ","").replace("\t","")[:new_attr_points]
+			while any(i in cfg.INCORRECT_STAT_ENTRY_HI for i in new_stats) or tooshort:
+				new_stats = input("Either too short or incorrect entry, try again\n??> ")		
+				new_stats = new_stats.replace(" ","").replace("\t","")[:new_attr_points]
+				if len(new_stats) < new_attr_points:
+					tooshort = True
 
 			dmg = new_stats.count("1")
 			hp = new_stats.count("2")
@@ -204,7 +216,6 @@ class Weapon():
 ###
 ### Enemy Class
 ###
-# monavar
 class Enemy():
 	def __init__(self, level, name=None, behaviour=None, boss=None):
 		self.level = level+cfg.ENEMY_MAX_LEVEL if boss else randint(level-2, level+cfg.ENEMY_MAX_LEVEL)
@@ -215,14 +226,14 @@ class Enemy():
 		# xp will be increased if enemy is boss
 		self.xp = 1
 		if self.level > level:		# enemy is stronger
-			self.xp += cfg.XP_TO_NEXTLEVEL * 3 // 20
+			self.xp += cfg.XP_TO_NEXTLEVEL * 3 / 20
 		elif self.level < level:	# enemy is weaker
-			self.xp += cfg.XP_TO_NEXTLEVEL * 1 // 20
+			self.xp += cfg.XP_TO_NEXTLEVEL * 1 / 20
 		else:						# enemy is same level
-			self.xp += cfg.XP_TO_NEXTLEVEL * 2 // 20
+			self.xp += cfg.XP_TO_NEXTLEVEL * 2 / 20
 		self.xp += randint(-cfg.XP_TO_NEXTLEVEL//30, cfg.XP_TO_NEXTLEVEL//30)	
 
-		names = ["Bandit","Monavar","Mummy","Spicek","Tepelops"]	# add more
+		names = ["Bandit","Monavar","Mummy","Spicek","Tepelops","Wobbegong"]	# add more
 		self.name = name if name else choice(names)
 
 		behaviours = ["offensive", "defensive", "balanced"]+[None]*3
@@ -239,7 +250,7 @@ class Enemy():
 
 		attr_points = 0
 		if self.level < 5:
-			attr_points = cfg.ATTR_POINTS_INITIAL//2 + (
+			attr_points = cfg.ATTR_POINTS_INITIAL//3 + (
 				(self.level-1) * cfg.ATTR_POINTS_LOWLVL if self.level>1 else 0
 				)
 		else:
@@ -256,7 +267,7 @@ class Enemy():
 			print("ATTRPOINTS",attr_points)
 
 		self.loot = 1
-		self.loot += randint(self.xp//4, self.xp*2)
+		self.loot += randint(round(self.xp/4), round(self.xp*2))
 
 		# DETERMINE ATTRIBUTE DISTRIBUTION
 		self.dmg = 0
@@ -343,7 +354,7 @@ class Enemy():
 		self.all_attr["luck"] = self.luck
 		self.all_attr["regeneration"] = self.regeneration
 		self.all_attr["level"] = self.level
-		self.all_attr["critmultiplier"] = self.critmultiplier
+		self.all_attr["critmultiplier"] = round(self.critmultiplier,2)
 		self.all_attr["max hp"] = self.max_hp
 		return self.all_attr
 
@@ -357,15 +368,25 @@ class Enemy():
 ### Gameplay functions
 ###
 def createNewHero():
-	playername = input("hero name: ")
+	playername = input("Hero Name: ")
 	initial_stats = input("""
+Welcome {1}, prepare yourself for a great adventure!
+Start by customizing your character.
+
 (1) Damage
 (2) HP
 (3) Defense
-You have 10 attribute points. Enter 10 numbers:
-[Be careful! If more than 10 numbers entered, the first 10 will be applied.]
-??> """)
-	initial_stats = initial_stats.replace(" ","").replace("\t","")[:10]
+You have {0} attribute points. Enter {0} numbers:
+[Be careful! If more than {0} numbers entered, the first {0} will be applied.]
+??> """.format(cfg.ATTR_POINTS_INITIAL, colored(playername,"green") ))
+	initial_stats = initial_stats.replace(" ","").replace("\t","")[:cfg.ATTR_POINTS_INITIAL]
+	tooshort = True if len(initial_stats) < cfg.ATTR_POINTS_INITIAL else False
+	while any(i in cfg.INCORRECT_STAT_ENTRY_LO for i in   initial_stats) or tooshort:
+		initial_stats = input("Either too short or incorrect entry, try again\n??> ")
+		initial_stats = initial_stats.replace(" ","").replace("\t","")[:cfg.ATTR_POINTS_INITIAL]
+		#print(initial_stats, len(initial_stats))	# DEBUG
+		if len(initial_stats) < cfg.ATTR_POINTS_INITIAL:
+			tooshort = True
 	
 	dmg = initial_stats.count("1")
 	hp = initial_stats.count("2") + 1
@@ -402,7 +423,8 @@ def attack(protagonist, opponent):
 
 	dmg = randint(protagonist.mindmg, protagonist.maxdmg)
 	crit = choice([1]*protagonist.luck + [0]*(100-protagonist.luck))
-	dmg = 1 if (dmg-opponent.defense*cfg.DEFENSE_ABSORB)<1 else dmg-opponent.defense*cfg.DEFENSE_ABSORB
+	dmg_lowerbound = 1 + protagonist.level/2 
+	dmg = dmg_lowerbound if (dmg-opponent.defense*cfg.DEFENSE_ABSORB)<dmg_lowerbound else dmg-opponent.defense*cfg.DEFENSE_ABSORB
 	dmg = dmg*protagonist.critmultiplier if crit else dmg
 	opponent.curr_hp -= dmg
 	print("xx> {} has dealt {}{} damage,\n    {} has {} hp left.".format(
@@ -426,55 +448,58 @@ def fight(hero, enemy):
 	eturn = 0
 	winner = None
 	turn = 0
-	while True:
-		turn += 1
-		print("xx> Turn {}".format(turn))
-		time.sleep(1)
-		hturn += hero.speed
-		eturn += enemy.speed
-		if hturn == cfg.QUICK_TURN:
-			print("::> Quick Turn for {}!".format(hero.name))
-			winner = attack(hero, enemy)
-			if winner:
-				break
-			hturn -= cfg.QUICK_TURN
-			turn -= 1
-		if eturn == cfg.QUICK_TURN and not hturn == cfg.QUICK_TURN:
-			print("::> Quick Turn for {}!".format(enemy.name))
-			winner = attack(enemy, hero)
-			if winner:
-				break
-			eturn -= cfg.QUICK_TURN
-		else:
-			winner = attack(hero, enemy)
-			if winner:
-				break
-			winner = attack(enemy, hero)
-			if winner:
-				break
-		# enemy may flee if attacker is the hero
-		if isinstance(hero, RandomHero): 
-			if turn == cfg.TURNLIMIT_MAX + hero.bravery*cfg.BRAVERY_FLEEDELAY:
-				break
+	try:
+		while True:
+			turn += 1
+			print("xx> Turn {}".format(turn))
+			time.sleep(1)
+			hturn += hero.speed
+			eturn += enemy.speed
+			if hturn == cfg.QUICK_TURN:
+				print("::> Quick Turn for {}!".format(hero.name))
+				winner = attack(hero, enemy)
+				if winner:
+					break
+				hturn -= cfg.QUICK_TURN
+				turn -= 1
+			if eturn == cfg.QUICK_TURN and not hturn == cfg.QUICK_TURN:
+				print("::> Quick Turn for {}!".format(enemy.name))
+				winner = attack(enemy, hero)
+				if winner:
+					break
+				eturn -= cfg.QUICK_TURN
+			else:
+				winner = attack(hero, enemy)
+				if winner:
+					break
+				winner = attack(enemy, hero)
+				if winner:
+					break
+			# enemy may flee if attacker is the hero
+			if isinstance(hero, RandomHero): 
+				if turn == cfg.TURNLIMIT_MAX + hero.bravery*cfg.BRAVERY_FLEEDELAY:
+					break
 
-		print("{:-<32}".format(""))
-		time.sleep(1)
+			print("{:-<32}".format(""))
+			time.sleep(1)
+	except KeyboardInterrupt:
+		cprint("==> {} has fled!".format(
+			colored(hero.name, hero.color) ),
+			attrs=["bold"],
+			end="\n\n"
+		)
+		time.sleep(3)
+		# restore HPs
+		hero.curr_hp = hero.max_hp
+		enemy.curr_hp = enemy.max_hp
+		return
 
-	time.sleep(3)
 	# restore HPs
-	hero.curr_hp = hero.hp*10
-	enemy.curr_hp = enemy.hp*10
+	hero.curr_hp = hero.max_hp
+	enemy.curr_hp = enemy.max_hp
 
 	print()	# print newline
 	if winner == hero:
-		"""
-		if turn <= cfg.TURNLIMIT_XPLOW:
-			xp_earned = enemy.xp // 4
-		elif turn <= cfg.TURNLIMIT_XPHI:
-			xp_earned = enemy.xp // 2
-		else:
-			xp_earned = enemy.xp
-		"""
 		xp_earned = enemy.xp
 
 		loot_multiplier = [2]*(hero.luck//2) + [1.5]*(hero.luck//2) + [1.25]*hero.luck + [1]*(100-(2*(hero.luck//2)+hero.luck))
@@ -488,8 +513,8 @@ def fight(hero, enemy):
 			attrs=["bold"]
 		)
 		cprint("==> Earned {} cora and {} xp.".format(
-			colored(money_earned, attrs=["bold"]),
-			colored(xp_earned, attrs=["bold"])	),
+			colored(round(money_earned,2), attrs=["bold"]),
+			colored(round(xp_earned,2), attrs=["bold"])	),
 			end="\n\n"
 		)
 
@@ -498,9 +523,15 @@ def fight(hero, enemy):
 			
 
 	elif winner == enemy:
+		xp_earned = enemy.xp / 4
+		hero.xp += xp_earned
+
 		cprint("==> {} has won!".format(
 			colored(enemy.name, enemy.color) ),
-			attrs=["bold"],
+			attrs=["bold"]
+		)
+		cprint("==> Earned 0 cora and {} xp.".format(
+			colored(round(xp_earned,2), attrs=["bold"])	),
 			end="\n\n"
 		)
 	else:			# enemy has fled
@@ -516,6 +547,27 @@ def pprint(entity):
 	# Print all attributes of an entity
 	for k,v in sorted(entity.__dict__.items()):
 		print("{: <16}: {}".format(k,v))
+
+def save():
+	while True:		
+		save_slot_input = input("Choose a Save Slot (1) (2) (3). Press 'q' to cancel:\n??>").upper()
+		if save_slot_input in ["1", "2", "3"]:
+			confirm = input("Saving to Save Slot {}. Enter (1) to confirm")
+			if confirm == "1":
+				pickle.dump(open("save_file"+save_slot_input, "wb"))
+				return True
+			else:
+				continue
+		elif save_slot_input == "Q":
+			return False
+		else:
+			continue
+
+
+def load():
+	pass
+
+
 
 if __name__ == '__main__':
 	#player = createNewHero()
@@ -548,13 +600,12 @@ if __name__ == '__main__':
 
 		flag_act = True
 		while flag_act:
-			act = input("""
-(1) Fight
+			act = input("""(1) Fight
 (2) Check Enemy Stats
 (3) Check Your Stats
 (4) Runaway
 ??> """)
-			if act == "" or act == "1":
+			if act == "1":
 				fight(playerhero, e)
 				flag_act = False
 			elif act == "2":
@@ -562,6 +613,11 @@ if __name__ == '__main__':
 			elif act == "3":
 				playerhero.checkStats()
 			elif act == "4":
+				cprint("==> {} has fled!".format(
+					colored(playerhero.name, playerhero.color) ),
+					attrs=["bold"],
+					end="\n\n"
+				)
 				break
 			else:
 				continue

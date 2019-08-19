@@ -1,0 +1,8 @@
+2019.08.19
+alpha 1.0.0:
+- Working xp and level-attribute system
+- Added main fight loop, game is playable with infinite amount of fights.
+
+alpha 1.1.0:
+-
+

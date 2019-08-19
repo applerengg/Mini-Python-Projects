@@ -12,7 +12,7 @@ other:
 
 change/fix:
 + defense will affect only curr_hp, not hp
-- 
++ added max_hp attribute 
 
 later:
 - random numbers pop up and player needs to press keys quickly
