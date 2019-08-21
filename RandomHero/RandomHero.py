@@ -10,9 +10,12 @@ from termcolor import cprint, colored
 from string import printable	# for attribute point spend checking.
 
 import pickle 	# for saving and loading profiles.
+import os 		# for saving and loading profiles.
 
 os.system("color")		# colored output can be used now
 
+def clear_screen():
+	os.system("cls" if os.name=="nt" else "clear")
 
 ###
 ### Configuration
@@ -368,6 +371,7 @@ class Enemy():
 ### Gameplay functions
 ###
 def createNewHero():
+	clear_screen()
 	playername = input("Hero Name: ")
 	initial_stats = input("""
 Welcome {1}, prepare yourself for a great adventure!
@@ -381,7 +385,7 @@ You have {0} attribute points. Enter {0} numbers:
 ??> """.format(cfg.ATTR_POINTS_INITIAL, colored(playername,"green") ))
 	initial_stats = initial_stats.replace(" ","").replace("\t","")[:cfg.ATTR_POINTS_INITIAL]
 	tooshort = True if len(initial_stats) < cfg.ATTR_POINTS_INITIAL else False
-	while any(i in cfg.INCORRECT_STAT_ENTRY_LO for i in   initial_stats) or tooshort:
+	while any(i in cfg.INCORRECT_STAT_ENTRY_LO for i in initial_stats) or tooshort:
 		initial_stats = input("Either too short or incorrect entry, try again\n??> ")
 		initial_stats = initial_stats.replace(" ","").replace("\t","")[:cfg.ATTR_POINTS_INITIAL]
 		#print(initial_stats, len(initial_stats))	# DEBUG
@@ -548,13 +552,16 @@ def pprint(entity):
 	for k,v in sorted(entity.__dict__.items()):
 		print("{: <16}: {}".format(k,v))
 
-def save():
+
+
+def save(profile):
+	# profile is a RandomHero object.
 	while True:		
-		save_slot_input = input("Choose a Save Slot (1) (2) (3). Press 'q' to cancel:\n??>").upper()
+		save_slot_input = input("Choose a Save Slot (1) (2) (3) to save current profile. Press 'q' to cancel:\n??> ").upper()
 		if save_slot_input in ["1", "2", "3"]:
-			confirm = input("Saving to Save Slot {}. Enter (1) to confirm")
+			confirm = input("Save Slot {} selected. Press (1) to confirm\n??> ".format(save_slot_input))
 			if confirm == "1":
-				pickle.dump(open("save_file"+save_slot_input, "wb"))
+				pickle.dump(profile, open("save_file"+save_slot_input, "wb"))
 				return True
 			else:
 				continue
@@ -563,10 +570,26 @@ def save():
 		else:
 			continue
 
-
 def load():
-	pass
-
+	# profile is a RandomHero object.
+	while True:		
+		save_slot_input = input("Choose a Save Slot (1) (2) (3) to load a profile. Press 'q' to cancel:\n??> ").upper()
+		f = "save_file"+save_slot_input 
+		if os.path.isfile(f) and os.path.getsize(f) > 0:
+			profile = pickle.load(open(f, "rb"))
+			confirm = input("Save Slot {} selected.\nHero: {}, level {}. Press (1) to confirm\n??> ".format(save_slot_input, profile.name, profile.level))
+			if confirm == "1":
+				print("Save Slot {} is loading...".format(save_slot_input))
+				return profile
+			else: 
+				continue
+		elif save_slot_input == "Q":
+			print("Didn't load profile, returning...")
+			time.sleep(1)
+			return None
+		else:
+			print("Save Slot {} is empty.".format(save_slot_input))
+			continue
 
 
 if __name__ == '__main__':
@@ -586,12 +609,32 @@ if __name__ == '__main__':
 	e9 = Enemy(9)
 	"""
 
-	playerhero = createNewHero()
+	player = None	# initiate player, later will be a RandomHero object by loading or creating a anew one.
+
+	for i in range(1,4):
+		f = "save_file" + str(i)
+		if os.path.isfile(f) and os.path.getsize(f) > 0:
+			loadable_content = True
+			break
+	else:
+		loadable_content = False
+
+	if loadable_content:
+		load_query = input("Saved game(s) available. Press (1) to check/load?\n??> ")
+		if load_query == "1":
+			player = load()
+
+	if player == None:	# if a profile is not loaded, create new profile.
+		player = createNewHero()
+	else:
+		clear_screen()
+		print("Welcome back {}!".format(colored(player.name, player.color)))	
+	
 	while 1:
 		print("...")
 		time.sleep(randint(10,30)/10)
 
-		e = Enemy(playerhero.level)
+		e = Enemy(player.level)
 		print("Enemy encounter!\nA {} level {}!".format(
 				colored(e.level, attrs=["bold"]),
 				colored(e.name, e.color)
@@ -606,15 +649,15 @@ if __name__ == '__main__':
 (4) Runaway
 ??> """)
 			if act == "1":
-				fight(playerhero, e)
+				fight(player, e)
 				flag_act = False
 			elif act == "2":
 				e.checkStats()
 			elif act == "3":
-				playerhero.checkStats()
+				player.checkStats()
 			elif act == "4":
 				cprint("==> {} has fled!".format(
-					colored(playerhero.name, playerhero.color) ),
+					colored(player.name, player.color) ),
 					attrs=["bold"],
 					end="\n\n"
 				)
