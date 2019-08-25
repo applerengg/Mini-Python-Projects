@@ -1,8 +1,27 @@
 2019.08.19
 alpha 1.0.0:
-- Working xp and level-attribute system
+- Added Working xp and level-attribute system
 - Added main fight loop, game is playable with infinite amount of fights.
 
-alpha 1.1.0:
--
+2019.08.21
+alpha 1.0.1:
+- added save function
+- added load function
+- added in-game load option
+
+2019.08.25
+alpha 1.0.2:
+- tiny changes in the in-game load option
+- small changes in save function
+	- added confirmation query for full slots
+	- added save success message
+- main fight loop is now a function (enemyEncounter) to be used in the main loop.
+- added in-game save option
+- added main loop: containing enemy encounter, store (dysfunctional), check stats, save game 
+
+
+
+
+
+
 
