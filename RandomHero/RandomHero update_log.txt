@@ -19,7 +19,10 @@ alpha 1.0.2:
 - added in-game save option
 - added main loop: containing enemy encounter, store (dysfunctional), check stats, save game 
 
-
+2019.08.25
+alpha 1.0.3:
+- enemyEncounter function is no longer a loop, works for one enemy only.
+- added ENEMY_MIN_LEVEL setting to Config. (ENEMY_MAX_LEVEL already existed)
 
 
 

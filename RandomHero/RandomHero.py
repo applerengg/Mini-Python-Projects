@@ -4,8 +4,7 @@ import time
 from threading import Thread 	# for ingame day cycle.
 
 import os 
-from termcolor import cprint, colored
-# ex: cprint("alperen","magenta", attrs=["bold","underline"])
+from termcolor import cprint, colored	# colored output on screen
 
 from string import printable	# for attribute point spend checking.
 
@@ -13,6 +12,8 @@ import pickle 	# for saving and loading profiles.
 import os 		# for saving and loading profiles.
 
 import sys 		# sys.exit()
+
+from pygame import mixer	# background music
 
 os.system("color")		# colored output can be used now
 
@@ -27,7 +28,7 @@ class Config():
 		self.ATTR_POINTS_HILVL = 6		# attribute points gained at levelup after level 5
 		self.ATTR_POINTS_INITIAL = 10	# attribute points given in the beginning
 		self.ATTR_POINTS_LOWLVL = 3		# attribute points gained at levelup before level 5
-		self.BRAVERY_CRITDMG = 0.1		# bravery increase rate of critmultiplier
+		self.BRAVERY_CRITDMG = 0.1		# bravery's increase rate of critmultiplier
 		self.BRAVERY_FLEEDELAY = 3
 		self.DEBUGMDOE = False
 		self.DEFENSE_ABSORB = 7/8
@@ -39,6 +40,7 @@ class Config():
 		self.ENEMY_INITIAL_LCK = 1
 		self.ENEMY_INITIAL_RGN = 0
 		self.ENEMY_MAX_LEVEL = 2
+		self.ENEMY_MIN_LEVEL = -2
 		self.HP_CURRHP_INCREASE = 10
 		self.INCORRECT_STAT_ENTRY_HI = printable.translate({ord(i): None for i in "1234567"})
 		self.INCORRECT_STAT_ENTRY_LO = printable.translate({ord(i): None for i in "123"})
@@ -47,7 +49,7 @@ class Config():
 		self.TURNLIMIT_MAX = 20
 		self.TURNLIMIT_XPHI = 6
 		self.TURNLIMIT_XPLOW = 3
-		self.XP_TO_NEXTLEVEL = 1
+		self.XP_TO_NEXTLEVEL = 100
 
 cfg = Config()
 
@@ -225,7 +227,8 @@ class Weapon():
 ###
 class Enemy():
 	def __init__(self, level, name=None, behaviour=None, boss=None):
-		self.level = level+cfg.ENEMY_MAX_LEVEL if boss else randint(level-2, level+cfg.ENEMY_MAX_LEVEL)
+		self.level = level+cfg.ENEMY_MAX_LEVEL if boss else randint(
+			level+cfg.ENEMY_MIN_LEVEL, level+cfg.ENEMY_MAX_LEVEL)
 		if self.level < 0:
 			self.level = 0
 		self.color = "red"
@@ -563,40 +566,44 @@ def pprint(entity):
 ###
 def enemyEncounter(player):
 	try:
-		while 1:
+		print()
+		for i in range(randint(1, 4)):
+			time.sleep(randint(5,20)/10)
 			print("...")
-			time.sleep(randint(10,30)/10)
 
-			e = Enemy(player.level)
-			print("Enemy encounter!\nA {} level {}!".format(
-					colored(e.level, attrs=["bold"]),
-					colored(e.name, e.color)
-				)
+		e = Enemy(player.level)
+		print("Enemy encounter!\nA {} level {}!".format(
+				colored(e.level, attrs=["bold"]),
+				colored(e.name, e.color)
 			)
+		)
 
-			flag_act = True
-			while flag_act:
-				act = input("""(1) Fight
+		flag_act = True
+		while flag_act:
+			act = input("""(1) Fight
 (2) Check Enemy Stats
 (3) Check Your Stats
 (4) Runaway
 ??> """)
-				if act == "1":
-					fight(player, e)
-					flag_act = False
-				elif act == "2":
-					e.checkStats()
-				elif act == "3":
-					player.checkStats()
-				elif act == "4":
-					cprint("==> {} has fled!".format(
-						colored(player.name, player.color) ),
-						attrs=["bold"],
-						end="\n\n"
-					)
-					break
-				else:
-					continue
+			if act == "1":
+				print()
+				fight(player, e)
+				flag_act = False
+			elif act == "2":
+				e.checkStats()
+				input("Press [ENTER] to continue...")
+			elif act == "3":
+				player.checkStats()
+				input("Press [ENTER] to continue...")
+			elif act == "4":
+				cprint("==> {} has fled!".format(
+					colored(player.name, player.color) ),
+					attrs=["bold"],
+					end="\n\n"
+				)
+				break
+			else:
+				continue
 	except KeyboardInterrupt:
 		return
 
@@ -671,7 +678,7 @@ if __name__ == '__main__':
 		loadable_content = False
 
 	if loadable_content:
-		load_query = input("Saved game(s) available. Press (1) to check/load?\n??> ")
+		load_query = input("Saved game(s) available. Press (1) to check/load, any other key otherwise.\n??> ")
 		if load_query == "1":
 			player = load()
 		else:
@@ -703,9 +710,9 @@ if __name__ == '__main__':
 			time.sleep(1)
 		elif act == "3":
 			player.checkStats()
-			time.sleep(1)
+			input("Press [ENTER] to continue...")
 		elif act == "4":
-			save()
+			save(player)
 			time.sleep(1)
 		elif act == "Q":
 			confirm = input("""Are you sure you want to quit? Press (1) to confirm.
