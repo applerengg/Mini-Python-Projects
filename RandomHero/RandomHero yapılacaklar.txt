@@ -10,6 +10,7 @@ other:
 - bravery may affect flee cost (?)
 - slow print effect
 - background music (?)
+- Training
 
 change/fix:
 + defense will affect only curr_hp, not hp

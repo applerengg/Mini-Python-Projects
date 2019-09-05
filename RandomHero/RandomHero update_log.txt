@@ -24,7 +24,11 @@ alpha 1.0.3:
 - enemyEncounter function is no longer a loop, works for one enemy only.
 - added ENEMY_MIN_LEVEL setting to Config. (ENEMY_MAX_LEVEL already existed)
 
-
-
+2019.09.05
+alpha 1.0.4:
+- luck and speed affect rate of critchance and dodgerate are doubled
+- added new function: lootEncounter
+	- exploring wild now has 2 possiblities: lootEnc or enemyEnc
+	- luck affects lootEncounter chance
 
 

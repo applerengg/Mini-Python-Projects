@@ -129,12 +129,19 @@ class RandomHero():
 
 	def updateAttrs(self, damage=0, hp=0, defense=0, speed=0, bravery=0, luck=0, regeneration=0):
 		self.damage += damage
+		self.damage = 1 if self.damage<1 else self.damage
 		self.hp += hp
+		self.hp = 1 if self.hp<1 else self.hp
 		self.defense += defense
+		self.defense = 1 if self.defense<1 else self.defense
 		self.speed += speed
+		self.speed = 1 if self.speed<1 else self.speed
 		self.bravery += bravery
+		self.bravery = 1 if self.bravery<1 else self.bravery
 		self.luck += luck
+		self.luck = 1 if self.luck<1 else self.luck
 		self.regeneration += regeneration
+		self.regeneration = 1 if self.regeneration<1 else self.regeneration
 
 		self.curr_hp = self.hp*10 + self.defense
 		self.mindmg += damage
@@ -142,9 +149,9 @@ class RandomHero():
 		self.critmultiplier += (damage/20) + bravery*cfg.BRAVERY_CRITDMG
 
 	def checkStats(self):
-		print("\n{} Stats:".format(colored(self.name, self.color)))
+		print("\n\t{} Stats:".format(colored(self.name, self.color)))
 		for k, v in sorted(self.updateAttrdict().items()):
-			print("{: <16}: {}".format(k,v))
+			print("\t{: <16}: {}".format(k,v))
 		print()	# print newline
 
 	def levelUp(self):
@@ -238,12 +245,12 @@ class Enemy():
 		if self.level > level:		# enemy is stronger
 			self.xp += cfg.XP_TO_NEXTLEVEL * 3 / 20
 		elif self.level < level:	# enemy is weaker
-			self.xp += cfg.XP_TO_NEXTLEVEL * 1 / 20
+			self.xp += cfg.XP_TO_NEXTLEVEL * 1.5 / 20
 		else:						# enemy is same level
 			self.xp += cfg.XP_TO_NEXTLEVEL * 2 / 20
-		self.xp += randint(-cfg.XP_TO_NEXTLEVEL//30, cfg.XP_TO_NEXTLEVEL//30)	
+		self.xp += randint(-cfg.XP_TO_NEXTLEVEL//30, cfg.XP_TO_NEXTLEVEL//20)	
 
-		names = ["Bandit","Monavar","Mummy","Spicek","Tepelops","Wobbegong"]	# add more
+		names = ["Bandit","Monavar","Mummy","Spicek","Tepelops","Wobbegangsta"]	# add more
 		self.name = name if name else choice(names)
 
 		behaviours = ["offensive", "defensive", "balanced"]+[None]*3
@@ -369,9 +376,9 @@ class Enemy():
 		return self.all_attr
 
 	def checkStats(self):
-		print("\n{} Stats:".format(colored(self.name, self.color)))
+		print("\n\t{} Stats:".format(colored(self.name, self.color)))
 		for k, v in sorted(self.updateAttrdict().items()):
-			print("{: <16}: {}".format(k,v))
+			print("\t{: <16}: {}".format(k,v))
 		print()	# print newline
 
 ###
@@ -416,7 +423,7 @@ def attack(protagonist, opponent):
 	if protagonist.curr_hp > protagonist.max_hp:
 		protagonist.curr_hp = protagonist.max_hp
 
-	dodge_rate = opponent.speed - protagonist.speed//2
+	dodge_rate = opponent.speed*2 - protagonist.speed//2
 	dodge_rate = 1 if dodge_rate<1 else dodge_rate
 	opponent_dodged = choice([1]*dodge_rate + [0]*(100-dodge_rate))
 	if opponent_dodged:
@@ -435,7 +442,7 @@ def attack(protagonist, opponent):
 		return None
 
 	dmg = randint(protagonist.mindmg, protagonist.maxdmg)
-	crit = choice([1]*protagonist.luck + [0]*(100-protagonist.luck))
+	crit = choice([1]*protagonist.luck*2 + [0]*(100-protagonist.luck*2))
 	dmg_lowerbound = 1 + protagonist.level/2 
 	dmg = dmg_lowerbound if (dmg-opponent.defense*cfg.DEFENSE_ABSORB)<dmg_lowerbound else dmg-opponent.defense*cfg.DEFENSE_ABSORB
 	dmg = dmg*protagonist.critmultiplier if crit else dmg
@@ -468,14 +475,14 @@ def fight(hero, enemy):
 			time.sleep(1)
 			hturn += hero.speed
 			eturn += enemy.speed
-			if hturn == cfg.QUICK_TURN:
+			if hturn >= cfg.QUICK_TURN:
 				print("::> Quick Turn for {}!".format(hero.name))
 				winner = attack(hero, enemy)
 				if winner:
 					break
 				hturn -= cfg.QUICK_TURN
 				turn -= 1
-			if eturn == cfg.QUICK_TURN and not hturn == cfg.QUICK_TURN:
+			if eturn >= cfg.QUICK_TURN and not hturn >= cfg.QUICK_TURN:
 				print("::> Quick Turn for {}!".format(enemy.name))
 				winner = attack(enemy, hero)
 				if winner:
@@ -493,7 +500,7 @@ def fight(hero, enemy):
 				if turn == cfg.TURNLIMIT_MAX + hero.bravery*cfg.BRAVERY_FLEEDELAY:
 					break
 
-			print("{:-<32}".format(""))
+			print("{:-<48}".format(""))
 			time.sleep(1)
 	except KeyboardInterrupt:
 		cprint("==> {} has fled!".format(
@@ -566,10 +573,6 @@ def pprint(entity):
 ###
 def enemyEncounter(player):
 	try:
-		print()
-		for i in range(randint(1, 4)):
-			time.sleep(randint(5,20)/10)
-			print("...")
 
 		e = Enemy(player.level)
 		print("Enemy encounter!\nA {} level {}!".format(
@@ -607,7 +610,92 @@ def enemyEncounter(player):
 	except KeyboardInterrupt:
 		return
 
-def store():
+def lootEncounter(player):
+	print(choice(["You see a box in the middle of the plain.", "You spot a half-buried chest under a tree.", "You notice a bump on the sands. It is a buried crate."]))
+	time.sleep(1)
+	if player.bravery < (1.1*player.level - 4 + randint(-2, 0)):
+		print("You are not brave enough to open it.")
+		return
+
+	good = ["You found a shiny piece of armor inside it!",
+			"You find a potion, it doesn't seem too suspicious and you decide to drink it.",
+			"There is nothing except just a few coras.",
+			"There is a decent amount of money in it!"]
+	
+	bad = [ "As soon as you touch, it triggers an explosion and you get hurt!",
+			"You find a potion, it doesn't seem too suspicious and you decide to drink it.", 
+			"You find a strange small item inside. While you are trying to figure it out, it releases black gas. You get dizzy and nauseous."]			
+	events = [good] + [bad]
+
+	def occur(event):
+		print(event)
+		if event == good[0]:
+			cprint("==> +3 defense", attrs=["bold"])
+			exec("player.updateAttrs(defense=2)")
+			return 1
+		if event == good[1]:
+			affected_stat = choice(["damage", "hp", "defense", "bravery", "speed", "regeneration", "luck"])
+			cprint("==> +1 {}".format(affected_stat), attrs=["bold"])
+			exec("player.updateAttrs("+affected_stat+"=1)")
+			return 1
+		if event == good[2]:
+			loot = randint(5, 9)
+			cprint("==> +{} cora".format(loot), attrs=["bold"])
+			player.money += loot
+			return 1
+		if event == good[3]:
+			loot = randint(20, 100)
+			cprint("==> +{} cora".format(loot), attrs=["bold"])
+			player.money += loot
+			return 1
+		
+		if event == bad[0]:
+			affected_stat = choice(["hp", "defense"])
+			cprint("==> -2 {}".format(affected_stat), attrs=["bold"])
+			exec("player.updateAttrs("+affected_stat+"=-2)")
+			return -1
+		if event == bad[1] or event == bad[2]:
+			affected_stat = choice(["damage", "hp", "defense", "bravery", "speed", "regeneration", "luck"])
+			cprint("==> -1 {}".format(affected_stat), attrs=["bold"])
+			exec("player.updateAttrs("+affected_stat+"=-1)")
+			return -1
+
+
+
+	locked = randint(0, 1)
+	if locked:
+		act = input("But it is locked. What do you want to do? \n(1) Try to force open it\n(2) Leave\n??> ")
+		if act == "1":
+			print("...")
+			time.sleep(1)
+			if player.damage < 1.5 * player.level or choice([True]*8 + [False]*2):
+				affected_stat = choice(["damage", "hp", "defense"])
+				print("You are not strong enough, you hurt yourself while trying to open it.")
+				cprint("==> -1 {}".format(affected_stat), attrs=["bold"])
+				exec("player."+affected_stat+" -= 1")
+				exec("player."+affected_stat+" = 1 if player."+affected_stat+"< 1 else player."+affected_stat)
+				return -1
+			else:
+				print("You successfully open it.\n...")
+				time.sleep(1)
+				event = choice(good)
+				occur(event)
+		else:
+			print("You leave...")
+			time.sleep(1)
+			return 0		
+	
+	else:
+		act = input("(1) Open it\n(2) Leave\n??> ")
+		if act == "1":
+			print("...")
+			time.sleep(1)
+			event = choice(choice(events))
+			occur(event)
+
+
+def store(player):
+	print(player.money)
 	pass
 
 
@@ -622,16 +710,17 @@ def save(profile):
 		if save_slot_input in ["1", "2", "3"]:
 			f = "save_file"+save_slot_input
 			if os.path.isfile(f) and os.path.getsize(f) > 0:
-				confirm = input("Save Slot {} is already occupied.\nHero: {}, level {}.\nPress (1) to confirm overwriting\n??> ".format(save_slot_input))
+				oldprofile = pickle.load(open(f, "rb"))
+				confirm = input("Save Slot {} is already occupied.\nHero: {}, level {}.\nPress (1) to confirm overwriting\n??> ".format(save_slot_input, oldprofile.name, oldprofile.level))
 				if confirm == "1":
-					pickle.dump(profile, open("save_file"+save_slot_input, "wb"))
-					print("Game Saved to Sace Slot {}".format(save_slot_input))
+					pickle.dump(profile, open(f, "wb"))
+					print("Game Saved to Save Slot {}".format(save_slot_input))
 					return True
 				else:
 					continue
 			else:
-				pickle.dump(profile, open("save_file"+save_slot_input, "wb"))
-				print("Game Saved to Sace Slot {}".format(save_slot_input))
+				pickle.dump(profile, open(f, "wb"))
+				print("Game Saved to Save Slot {}".format(save_slot_input))
 				return True		
 		elif save_slot_input == "Q":
 			print("Saving cancelled.")
@@ -701,12 +790,19 @@ if __name__ == '__main__':
 (2) Go to the store
 (3) Check your stats
 (4) Save game
+(C) Clear Screen
 (Q) Quit game 
 ??> """).upper()
 		if act == "1":
-			enemyEncounter(player)
+			print()
+			for i in range(randint(1, 4)):
+				time.sleep(randint(5,20)/10)
+				print("...")
+			lootEnc_rate = 5 + player.luck	
+			func = choice([lootEncounter]*lootEnc_rate + [enemyEncounter]*(100-lootEnc_rate))
+			func(player)
 		elif act == "2":
-			store()
+			store(player)
 			time.sleep(1)
 		elif act == "3":
 			player.checkStats()
@@ -714,9 +810,12 @@ if __name__ == '__main__':
 		elif act == "4":
 			save(player)
 			time.sleep(1)
+		
+		elif act == "C":
+			clear_screen()
 		elif act == "Q":
 			confirm = input("""Are you sure you want to quit? Press (1) to confirm.
-[Remember that you can save your game befor quiting, if you didn't already!]
+[Remember that you can save your game before quiting, if you didn't already!]
 ??> """)
 			time.sleep(1)
 			if confirm == "1":
