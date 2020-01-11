@@ -2,4 +2,6 @@
 - days lived
 - kelime oyunu
 - amiral battý
--
+- rastgele pikselleri boyayarak resim ortaya çýkarma
+  (https://www.samcodes.co.uk/project/geometrize-haxe-web gibi)
+- 

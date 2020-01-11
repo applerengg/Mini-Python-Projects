@@ -16,6 +16,7 @@ import sys 		# sys.exit()
 from pygame import mixer	# background music
 
 os.system("color")		# colored output can be used now
+mixer.init()			# initialize for later usage
 
 def clear_screen():
 	os.system("cls" if os.name=="nt" else "clear")
@@ -44,6 +45,11 @@ class Config():
 		self.HP_CURRHP_INCREASE = 10
 		self.INCORRECT_STAT_ENTRY_HI = printable.translate({ord(i): None for i in "1234567"})
 		self.INCORRECT_STAT_ENTRY_LO = printable.translate({ord(i): None for i in "123"})
+		self.MUSIC_BATTLE = "music/RH_test_battle.mp3"
+		self.MUSIC_ENEMYENCOUNTER = ""
+		self.MUSIC_LEVELUP = "music/RH_test_levelup.mp3"
+		self.MUSIC_LOOTENCOUNTER = "music/RH_test_lootencounter.mp3"
+		self.MUSIC_MAIN = "music/RH_test_main.mp3"
 		self.QUICK_TURN = 20
 		self.REGEN_MULTIPLIER = 2/4
 		self.TURNLIMIT_MAX = 20
@@ -144,6 +150,7 @@ class RandomHero():
 		self.regeneration = 1 if self.regeneration<1 else self.regeneration
 
 		self.curr_hp = self.hp*10 + self.defense
+		self.max_hp = self.curr_hp
 		self.mindmg += damage
 		self.maxdmg += damage
 		self.critmultiplier += (damage/20) + bravery*cfg.BRAVERY_CRITDMG
@@ -155,6 +162,9 @@ class RandomHero():
 		print()	# print newline
 
 	def levelUp(self):
+		mixer.music.load(cfg.MUSIC_LEVELUP)
+		mixer.music.play()
+
 		new_attr_points = 0
 		level_earned = int(self.xp // cfg.XP_TO_NEXTLEVEL)
 		self.xp -= cfg.XP_TO_NEXTLEVEL * level_earned
@@ -464,6 +474,9 @@ def attack(protagonist, opponent):
 
 
 def fight(hero, enemy):
+	mixer.music.load(cfg.MUSIC_BATTLE)
+	mixer.music.play(loops=-1)
+
 	hturn = 0
 	eturn = 0
 	winner = None
@@ -611,6 +624,9 @@ def enemyEncounter(player):
 		return
 
 def lootEncounter(player):
+	mixer.music.load(cfg.MUSIC_LOOTENCOUNTER)
+	mixer.music.play(loops=-1, start=35)
+
 	print(choice(["You see a box in the middle of the plain.", "You spot a half-buried chest under a tree.", "You notice a bump on the sands. It is a buried crate."]))
 	time.sleep(1)
 	if player.bravery < (1.1*player.level - 4 + randint(-2, 0)):
@@ -668,7 +684,7 @@ def lootEncounter(player):
 		if act == "1":
 			print("...")
 			time.sleep(1)
-			if player.damage < 1.5 * player.level or choice([True]*8 + [False]*2):
+			if player.damage < 1.5 * player.level or choice([True]*1 + [False]*9):
 				affected_stat = choice(["damage", "hp", "defense"])
 				print("You are not strong enough, you hurt yourself while trying to open it.")
 				cprint("==> -1 {}".format(affected_stat), attrs=["bold"])
@@ -785,6 +801,10 @@ if __name__ == '__main__':
 	### MAIN LOOP
 	###
 	while 1:
+		if not mixer.music.get_busy():
+			mixer.music.load(cfg.MUSIC_MAIN)
+			mixer.music.play(loops=-1)
+
 		act = input("""
 (1) Explore the wild
 (2) Go to the store
@@ -801,6 +821,7 @@ if __name__ == '__main__':
 			lootEnc_rate = 5 + player.luck	
 			func = choice([lootEncounter]*lootEnc_rate + [enemyEncounter]*(100-lootEnc_rate))
 			func(player)
+			mixer.music.stop()
 		elif act == "2":
 			store(player)
 			time.sleep(1)
