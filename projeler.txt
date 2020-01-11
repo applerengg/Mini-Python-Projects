@@ -1,3 +1,5 @@
+- GITIGNORE EKLE VE DOSYALARI DÜZENLE!
+
 - taþ makas kaðýt
 - days lived
 - kelime oyunu
