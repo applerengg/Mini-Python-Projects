@@ -1,0 +1,13 @@
++ User inputs image filename
+- Select random image option
++ mode selection option: create or erase image
+- background color option
+- Brush Shape options:
+	+ square brush 
+	- circle brush
+	- triangle brush
+-
+
+
+
+
