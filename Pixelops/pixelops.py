@@ -10,12 +10,12 @@ def random_pixel(rows, cols):
 	return (row, col)
 
 ### Default values:
-# mode = "1"
-# speed = 100
-# brush_shape = "snowflake"
-# filename = "watch.jpg"
+mode = "1"
+speed = 100
+brush_shape = "snowflake"
+filename = "watch.jpg"
 
-filename = input("Enter filename for the image, or '0' for random selection: ")
+filename = input("??> Enter filename for the image, or '0' for random selection: ")
 if filename == "":
 	filename = "watch.jpg"
 elif filename == "0":
@@ -23,15 +23,16 @@ elif filename == "0":
 
 try:
 	img = cv2.imread(filename, cv2.IMREAD_COLOR)
-	if img == None:
+	if img.size == 0:
 		raise Exception
 except Exception as e:
-	print("An error occured, quiting...")
+	print("!!> Image file cannot be opened, quiting...")
 	sys.exit(0)
 
+print(">>> Image: {}".format(filename))
 
 while 1:
-	mode = input("Select Mode:\n(1)Create image\n(2)Erase image\n")
+	mode = input("??> Select Mode:\n(1)Create image\n(2)Erase image\n")
 	if mode in ["1", "2"]:
 		break
 
