@@ -13,6 +13,7 @@ import os 		# for saving and loading profiles.
 
 import sys 		# sys.exit()
 
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"	# do not print message on pygame import
 from pygame import mixer	# background music
 
 os.system("color")		# colored output can be used now
