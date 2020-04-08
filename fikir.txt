@@ -7,3 +7,4 @@
 - rastgele pikselleri boyayarak resim ortaya çýkarma
   (https://www.samcodes.co.uk/project/geometrize-haxe-web gibi)
 - turtle modülü ile denemeler
+- yýlan oyunu

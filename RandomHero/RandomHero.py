@@ -716,6 +716,26 @@ def store(player):
 	pass
 
 
+def inn(player):
+	people = randint(0, 10)
+	print(f"There are {people} people in the entry hall.")
+	act = input("""
+(1) Talk to the Innkeeper
+(2) Play games with the crowd
+(S) Save Game
+(E) Exit the Inn
+??> """).upper()
+
+	if act == "1":
+		pass
+	if act == "2":
+		pass
+	if act == "S":
+		pass
+	else:
+		pass	
+
+
 ###
 ### SAVE & LOAD FUNCTIONS
 ###
