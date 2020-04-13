@@ -1,9 +1,15 @@
-+ score
 - more than one food mode
 - different food scores mode
-+ Portal walls mode
 - snek's head color
-+ border & borderless draw option
 - adding Obstacles option (size, number)
 - Time display
--
+- Main Menu
+- Pause game when pressed a button
+- Levels ???
+
++ score display
++ Portal walls mode
++ border & borderless draw option
+
+
+
