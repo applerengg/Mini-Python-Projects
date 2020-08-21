@@ -1,0 +1,7 @@
+- different colors for messages
+- right-left aligned messages
+- how many online in chat room
+
+
+
+

@@ -1,0 +1,1 @@
+pyinstaller --onefile server_of_chat.py

@@ -17,7 +17,7 @@ class CFG():
 	CLR_SCR_TXT = (32, 32, 192)		# Score text color
 	CLR_TTL_TXT = (192, 64, 64)		# Title text color
 	SIZE_SNEK = 12					# snake size in pixels
-	SIZE_WIN = (960, 540)			# Window size (width, height)
+	SIZE_WIN = (720, 720)			# Window size (width, height)
 	SPD = 30						# snake speed
 
 	# Binary settings

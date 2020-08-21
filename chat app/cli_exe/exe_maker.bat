@@ -1,0 +1,1 @@
+pyinstaller --onefile client_of_chat.py
