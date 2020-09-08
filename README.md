@@ -1,3 +1,3 @@
 # Mini-Python-Projects
-These are some little programs/games I made for fun and to exercise and improve myself, when I was at the Prep school.
+These are some little programs/games I made for fun and to practice and improve myself.
 Some of these are unfinished.
