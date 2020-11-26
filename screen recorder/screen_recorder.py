@@ -25,7 +25,7 @@ date = getTimestampString()
 save_location = "video_captures/vid_{}.avi".format(date)
 
 output = cv2.VideoWriter(save_location, codec, FPS, resolution)
-print("PRESS ENTER ON THE PREVIEW WINDOW TO CLOSE AND SAVE VIDEO CAPTURE")
+print("PRESS <ESC> ON THE PREVIEW WINDOW TO CLOSE AND SAVE VIDEO CAPTURE")
 
 while True:
 	ss = pyautogui.screenshot()			# get screenshot

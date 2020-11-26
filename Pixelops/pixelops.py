@@ -109,7 +109,7 @@ cv2.waitKey(0)
 
 
 save = input("??> Do you want to save this image?\n")
-if save.lower() in ["y", "yes", "yep", "1", "true", "ok"
+if save.lower() in ["y", "yes", "yep", "1", "true", "ok",
 	"olur", "tamam", "yaparım", "usta"]:	### :) :)
 	outfilename = input("??> Enter filename:\n")
 	try:
