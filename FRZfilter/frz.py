@@ -11,13 +11,20 @@ from datetime import datetime
 import sys
 
 
-# w, h = 640, 480
+
+###
+### setting variables
+###
+camera = 0              # which camera to use
 orientation = False     # True: scans width (horizontal), False: scans height (vertical)
-duration = 10           # in seconds
+duration = 10           # scan duration in seconds
 filename = "{time}"     # filename to save the resulting image
 closed = True           # camera wont open after closing the GUI, if this is set to True (flag for continuing)
 
-# GUI operations
+
+###
+### GUI operations
+###
 def selectOrientation():
     global orientation
     orientation = orientation_var.get()
@@ -83,7 +90,9 @@ def getTimestampString():
 
 duration -= 1           # it lasts 1 sec longer than given value, so decrement by 1.
 scan = 0
-vid = cv2.VideoCapture(0)
+vid = cv2.VideoCapture(camera)
+vid.set(3, 1920)
+vid.set(4, 1080)
 _, frame = vid.read()
 # frame = cv2.flip(frame, 1)
 h, w = frame.shape[:2]

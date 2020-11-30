@@ -18,7 +18,7 @@ change/fix:
 + added max_hp attribute 
 
 later:
-- random numbers pop up and player needs to press keys quickly
+- Quick-Time event 
 - 
 
 

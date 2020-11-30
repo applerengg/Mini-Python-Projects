@@ -1,8 +1,0 @@
-v1.01:  - oyuncu adý alma eklendi
-	- yapýmcý adý ve versiyon eklendi
-
-v1.02   - otomatik kapanmayý engellemek için sona input eklendi
-	- kurallar güncellendi
-
-v1.03   - * ve *** komutlarýyla oyundan çýkma eklendi
-		- kurallar güncellendi
