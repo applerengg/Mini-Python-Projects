@@ -1,5 +1,6 @@
 __pycache__/
 /**/*.wav
 /**/*.avi
+/**/*.mp4
 /FRZfilter/*.jpg
 /tests_and_unfinished
