@@ -17,7 +17,7 @@ import sys
 ###
 camera = 0              # which camera to use
 orientation = False     # True: scans width (horizontal), False: scans height (vertical)
-mirror = False          # True: mirrors the video image, False: do nothing
+mirror = True           # True: mirrors the video image, False: do nothing
 duration = 10           # scan duration in seconds
 filename = "{time}"     # filename to save the resulting image
 closed = True           # camera wont open after closing the GUI, if this is set to True (flag for continuing)
@@ -49,7 +49,7 @@ def validate(event=None):
     root.destroy()
 
 root = Tk()
-root.geometry("200x250")
+root.geometry("250x300")
 orientation_var = IntVar()
 radio1 = Radiobutton(root, text="Horizontal", variable=orientation_var, value=1, command=selectOrientation)
 radio2 = Radiobutton(root, text="Vertical", variable=orientation_var, value=0, command=selectOrientation)
@@ -59,7 +59,8 @@ radio2.select()
 
 mirror_var = IntVar()
 mirror_checkbox = Checkbutton(root, text="Mirror Camera", variable=mirror_var, onvalue=1, offvalue=0, command=setMirror)
-mirror_checkbox.pack()
+mirror_checkbox.pack(pady=(10,0))
+mirror_checkbox.select()
 
 duration_label = Label(text="Duration (seconds):"); duration_label.pack(pady=(10,0))
 duration_var = StringVar()
@@ -75,9 +76,9 @@ filename_entry.pack()
 
 message_var = StringVar()
 message_var.set("Press OK to start")
-message_label = Label(root, textvariable=message_var); message_label.pack(pady=(10,0))
+message_label = Label(root, textvariable=message_var); message_label.pack(pady=(20,0))
 
-confirm = Button(root, text="OK", width=100, height=5, bg="#6b6", command=validate); 
+confirm = Button(root, text="OK", width=100, height=8, bg="#6b6", command=validate); 
 root.bind("<Return>", validate)
 root.bind("<Escape>", lambda x: root.destroy())
 confirm.pack()
@@ -155,7 +156,6 @@ def displayer():
     
     while scan < condition:
         frame = read_frame()
-        # frame = cv2.flip(frame, 1)
         cv2.imshow("final", cpy)
         k = cv2.waitKey(1) & 0xff
         if k == 27:
