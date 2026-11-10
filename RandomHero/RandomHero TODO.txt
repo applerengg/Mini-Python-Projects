@@ -4,6 +4,7 @@ priority:
 + add enemy loot & player money system
 + bravery will affect crit damage and enemy flee
 + random level enemies to confront
+- Cooldown based fighting system (attack with threads)
 
 other:
 - add clock & day cycle (thread)
